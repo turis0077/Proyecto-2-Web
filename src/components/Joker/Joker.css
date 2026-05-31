@@ -1,0 +1,21 @@
+.joker {
+  width: 140px;
+  height: 200px;
+  border-radius: 12px;
+  background: linear-gradient(160deg, #2a2d3a, #1a1d29);
+  padding: 16px;
+  cursor: pointer;
+  border: 2px solid;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.joker:hover { transform: translateY(-6px); }
+.joker--common { border-color: #6b7280; }
+.joker--uncommon { border-color: #10b981; box-shadow: 0 0 12px rgba(16, 185, 129, 0.3); }
+.joker--rare { border-color: #a855f7; box-shadow: 0 0 16px rgba(168, 85, 247, 0.4); }
+.joker__name { font-size: 18px; font-weight: bold; }
+.joker__desc { font-size: 14px; color: var(--text-muted); }
+.joker__rarity { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }

@@ -1,0 +1,13 @@
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+.env.*
+.DS_Store
+*.log
+npm-debug.log*
+.vscode/settings.json
+.idea/
+coverage/
+PLAN_NOT_BALATRO.md

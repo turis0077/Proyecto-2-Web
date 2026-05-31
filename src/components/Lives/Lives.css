@@ -1,0 +1,14 @@
+.lives {
+  display: flex;
+  gap: 6px;
+  font-size: 24px;
+}
+.life {
+  color: rgba(255, 255, 255, 0.2);
+  transition: color 0.2s;
+  user-select: none;
+}
+.life--active {
+  color: var(--accent-red);
+  text-shadow: 0 0 8px rgba(212, 51, 74, 0.5);
+}

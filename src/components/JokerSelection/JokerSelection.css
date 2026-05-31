@@ -1,0 +1,14 @@
+.joker-selection {
+  text-align: center;
+  padding: 32px;
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  margin: 24px auto;
+  max-width: 600px;
+}
+.joker-selection__options {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  margin-top: 24px;
+}

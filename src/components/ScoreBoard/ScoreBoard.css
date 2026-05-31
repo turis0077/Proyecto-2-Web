@@ -1,0 +1,15 @@
+.scoreboard {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  background: var(--bg-secondary);
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin: 16px;
+}
+.scoreboard__round { font-size: 14px; color: var(--text-muted); }
+.scoreboard__target strong { display: block; font-size: 24px; color: var(--accent-red); }
+.scoreboard__current strong { display: block; font-size: 24px; color: var(--accent-gold); }
+.scoreboard__formula { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+.chips { background: var(--chip-blue); padding: 4px 10px; border-radius: 6px; }
+.mult  { background: var(--mult-red); padding: 4px 10px; border-radius: 6px; }
