@@ -18,6 +18,7 @@ function App() {
 
   const {
     hand,
+    deck,
     round,
     score,
     target,
@@ -62,11 +63,13 @@ function App() {
   };
 
   const handlePlayHand = () => {
+    if (selectedIds.length > MAX_SELECTION) return;
     playHand(selectedIds, activeJokers);
     setSelectedIds([]);
   };
 
   const handleDiscard = () => {
+    if (selectedIds.length > MAX_SELECTION) return;
     discard(selectedIds);
     setSelectedIds([]);
   };
@@ -140,7 +143,7 @@ function App() {
               </div>
             )}
 
-            <p className="selection-count">Seleccionadas: {selectedIds.length} / {MAX_SELECTION}</p>
+            <p className="selection-count">Cartas seleccionadas: {selectedIds.length} / {MAX_SELECTION} (Restantes: {MAX_SELECTION - selectedIds.length})</p>
 
             <Hand cards={hand} selectedIds={selectedIds} onToggleCard={toggleCard} />
 
@@ -155,7 +158,7 @@ function App() {
               <button
                 type="button"
                 onClick={handleDiscard}
-                disabled={!selectedIds.length || discardsLeft === 0}
+                disabled={!selectedIds.length || discardsLeft === 0 || selectedIds.length > deck.length}
               >
                 Descartar ({discardsLeft})
               </button>

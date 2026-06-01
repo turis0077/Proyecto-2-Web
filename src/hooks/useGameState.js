@@ -14,7 +14,7 @@ function targetForRound(round, diff) {
 
 function evaluatePhase(state) {
   if (state.score >= state.target) return 'WON_ROUND';
-  if (state.deck.length === 0 && state.hand.length < 5) return 'GAME_OVER';
+  if (state.deck.length < 5) return 'GAME_OVER';
   return 'PLAYING';
 }
 
@@ -67,7 +67,6 @@ export function useGameState(difficultyKey = 'normal') {
   const playHand = useCallback((selectedIds, jokers = []) => {
     setState(prev => {
       const played = prev.hand.filter(c => selectedIds.includes(c.id));
-      const remainingHand = prev.hand.filter(c => !selectedIds.includes(c.id));
       const handType = evaluateHand(played);
       let { score: gained, chips, mult } = calculateScore(handType, played, jokers);
 
@@ -78,7 +77,19 @@ export function useGameState(difficultyKey = 'normal') {
 
       const needed = Math.min(selectedIds.length, prev.deck.length);
       const { hand: drawn, remaining: newDeck } = drawCards(prev.deck, needed);
-      const newHand = [...remainingHand, ...drawn];
+      
+      let drawnIndex = 0;
+      const newHand = prev.hand.map(c => {
+        if (selectedIds.includes(c.id)) {
+          if (drawnIndex < drawn.length) {
+            const newCard = drawn[drawnIndex];
+            drawnIndex++;
+            return newCard;
+          }
+          return null;
+        }
+        return c;
+      }).filter(Boolean);
 
       const updated = {
         ...prev,
@@ -96,12 +107,27 @@ export function useGameState(difficultyKey = 'normal') {
   const discard = useCallback((selectedIds) => {
     setState(prev => {
       if (prev.discardsLeft <= 0) return prev;
-      const kept = prev.hand.filter(c => !selectedIds.includes(c.id));
-      const need = prev.hand.length - kept.length;
-      const { hand: drawn, remaining } = drawCards(prev.deck, need);
+      if (selectedIds.length > prev.deck.length) return prev;
+
+      const needed = selectedIds.length;
+      const { hand: drawn, remaining } = drawCards(prev.deck, needed);
+      
+      let drawnIndex = 0;
+      const newHand = prev.hand.map(c => {
+        if (selectedIds.includes(c.id)) {
+          if (drawnIndex < drawn.length) {
+            const newCard = drawn[drawnIndex];
+            drawnIndex++;
+            return newCard;
+          }
+          return null;
+        }
+        return c;
+      }).filter(Boolean);
+
       return {
         ...prev,
-        hand: [...kept, ...drawn],
+        hand: newHand,
         deck: remaining,
         discardsLeft: prev.discardsLeft - 1,
       };

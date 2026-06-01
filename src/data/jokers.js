@@ -40,7 +40,7 @@ export const JOKERS = [
     description: '×2 Mult global',
     rarity: 'rare',
     effect: 'mulMult',
-    value: 2,
+    value: 1.5,
   },
   {
     id: 'joker-face',
