@@ -8,19 +8,19 @@ export const SUITS = [
 
 // Rangos con sus chips base
 export const RANKS = [
-  { id: '2',  label: '2',  value: 2,  chips: 2  },
-  { id: '3',  label: '3',  value: 3,  chips: 3  },
-  { id: '4',  label: '4',  value: 4,  chips: 4  },
-  { id: '5',  label: '5',  value: 5,  chips: 5  },
-  { id: '6',  label: '6',  value: 6,  chips: 6  },
-  { id: '7',  label: '7',  value: 7,  chips: 7  },
-  { id: '8',  label: '8',  value: 8,  chips: 8  },
-  { id: '9',  label: '9',  value: 9,  chips: 9  },
-  { id: '10', label: '10', value: 10, chips: 10 },
-  { id: 'J',  label: 'J',  value: 11, chips: 10 },
-  { id: 'Q',  label: 'Q',  value: 12, chips: 10 },
-  { id: 'K',  label: 'K',  value: 13, chips: 10 },
-  { id: 'A',  label: 'A',  value: 14, chips: 11 },
+  { id: '2',  label: '2',  value: 2,  chips: 12  },
+  { id: '3',  label: '3',  value: 3,  chips: 13  },
+  { id: '4',  label: '4',  value: 4,  chips: 14  },
+  { id: '5',  label: '5',  value: 5,  chips: 15  },
+  { id: '6',  label: '6',  value: 6,  chips: 16  },
+  { id: '7',  label: '7',  value: 7,  chips: 17  },
+  { id: '8',  label: '8',  value: 8,  chips: 18  },
+  { id: '9',  label: '9',  value: 9,  chips: 19  },
+  { id: '10', label: '10', value: 10, chips: 20 },
+  { id: 'J',  label: 'J',  value: 11, chips: 20 },
+  { id: 'Q',  label: 'Q',  value: 12, chips: 20 },
+  { id: 'K',  label: 'K',  value: 13, chips: 20 },
+  { id: 'A',  label: 'A',  value: 14, chips: 21 },
 ];
 
 export const EDITIONS = {

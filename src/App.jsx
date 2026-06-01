@@ -5,21 +5,29 @@ import Menu from './components/Menu/Menu';
 import Lives from './components/Lives/Lives';
 import ScoreBoard from './components/ScoreBoard/ScoreBoard';
 import GameOver from './components/GameOver/GameOver';
-import JokerSelection from './components/JokerSelection/JokerSelection';
+import Shop from './components/Shop/Shop';
+import Inventory from './components/Inventory/Inventory';
+import { DIFFICULTIES } from './data/difficulties';
 import { audio } from './utils/audioManager';
 import './styles/global.css';
 
 const MAX_SELECTION = 5;
 
+const BLIND_NAMES = ['Ciega Pequeña', 'Ciega Grande', 'La Casa'];
+
 function App() {
   const [showMenu, setShowMenu] = useState(true);
   const [difficulty, setDifficulty] = useState('normal');
-  const [activeJokers, setActiveJokers] = useState([]);
 
   const {
     hand,
     deck,
-    round,
+    blindIndex,
+    subRound,
+    handsLeft,
+    money,
+    inventory,
+    activeJokers,
     score,
     target,
     phase,
@@ -28,14 +36,17 @@ function App() {
     lastPlay,
     playHand,
     discard,
-    skipRound,
-    nextRound,
+    skipHand,
+    skipBlind,
+    nextBlind,
+    buyItem,
+    toggleActiveJoker,
+    useTarot,
     resetGame,
   } = useGameState(difficulty);
 
   const [selectedIds, setSelectedIds] = useState([]);
 
-  // Control de música dinámica según la fase y puntuación
   useEffect(() => {
     if (showMenu) {
       audio.play('menu');
@@ -58,13 +69,12 @@ function App() {
 
   const handleStartGame = (selectedDiff) => {
     setDifficulty(selectedDiff);
-    setActiveJokers([]);
     setShowMenu(false);
   };
 
   const handlePlayHand = () => {
     if (selectedIds.length > MAX_SELECTION) return;
-    playHand(selectedIds, activeJokers);
+    playHand(selectedIds);
     setSelectedIds([]);
   };
 
@@ -74,13 +84,7 @@ function App() {
     setSelectedIds([]);
   };
 
-  const handlePickJoker = (joker) => {
-    setActiveJokers(prev => [...prev, joker]);
-    nextRound();
-  };
-
   const handleRestart = () => {
-    setActiveJokers([]);
     resetGame();
     setShowMenu(true);
   };
@@ -90,14 +94,30 @@ function App() {
   }
 
   if (phase === 'GAME_OVER') {
-    return <GameOver round={round} score={score} onRestart={handleRestart} />;
+    return <GameOver round={`${BLIND_NAMES[blindIndex]} (Ronda ${subRound}/5)`} score={score} onRestart={handleRestart} />;
   }
+
+  if (phase === 'GAME_WON') {
+    return (
+      <div className="game-over">
+        <h2>¡Felicidades! Has vencido a La Casa.</h2>
+        <p>Has completado todas las ciegas.</p>
+        <button onClick={handleRestart}>Volver al menú</button>
+      </div>
+    );
+  }
+
+  const maxLives = DIFFICULTIES[difficulty].lives;
 
   return (
     <div className="app">
       <header className="game-header">
         <span className="game-header__brand">Not-Balatro 🎰</span>
-        <Lives lives={lives} max={difficulty === 'easy' ? 5 : difficulty === 'hard' ? 2 : 3} />
+        <div className="game-header__info" style={{ marginLeft: '1rem', flex: 1, display: 'flex', gap: '1rem' }}>
+          <span style={{color: '#ffd700', fontWeight: 'bold'}}>Dinero: ${money}</span>
+          <span>{BLIND_NAMES[blindIndex]} - Ronda {subRound}/5</span>
+        </div>
+        <Lives lives={lives} max={maxLives} />
         <button
           type="button"
           className="game-header__restart"
@@ -112,36 +132,28 @@ function App() {
       </header>
 
       <main className="game-main">
-        <ScoreBoard
-          round={round}
-          score={score}
-          target={target}
-          chips={lastPlay?.chips || 0}
-          mult={lastPlay?.mult || 0}
-        />
-
         {phase === 'WON_ROUND' ? (
-          <JokerSelection onPick={handlePickJoker} />
+          <Shop money={money} onBuy={buyItem} onNextBlind={nextBlind} />
         ) : (
           <>
+            <ScoreBoard
+              round={`${BLIND_NAMES[blindIndex]} - Ronda ${subRound}/5`}
+              score={score}
+              target={target}
+              chips={lastPlay?.chips || 0}
+              mult={lastPlay?.mult || 0}
+            />
+
             {lastPlay && (
               <div className="last-play-feedback">
                 ¡Jugaste <strong>{lastPlay.handType}</strong> y ganaste <strong>{lastPlay.gained}</strong> puntos!
               </div>
             )}
 
-            {activeJokers.length > 0 && (
-              <div className="active-jokers-list">
-                <h3>Comodines Activos:</h3>
-                <div className="active-jokers-row">
-                  {activeJokers.map((j, idx) => (
-                    <div key={`${j.id}-${idx}`} className={`active-joker-tag active-joker-tag--${j.rarity}`}>
-                      <strong>{j.name}</strong> ({j.description})
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="game-info-bar" style={{display:'flex', justifyContent:'center', gap:'2rem', margin:'1rem 0', fontWeight:'bold', fontSize:'1.1rem'}}>
+              <span>Manos restantes: {handsLeft}</span>
+              <span>Descartes: {discardsLeft}</span>
+            </div>
 
             <p className="selection-count">Cartas seleccionadas: {selectedIds.length} / {MAX_SELECTION} (Restantes: {MAX_SELECTION - selectedIds.length})</p>
 
@@ -160,15 +172,31 @@ function App() {
                 onClick={handleDiscard}
                 disabled={!selectedIds.length || discardsLeft === 0 || selectedIds.length > deck.length}
               >
-                Descartar ({discardsLeft})
+                Descartar
               </button>
               <button
                 type="button"
-                onClick={skipRound}
+                onClick={skipHand}
+                style={{background: '#8e44ad'}}
               >
-                Skip ronda (-1 Vida)
+                Saltar mano
+              </button>
+              <button
+                type="button"
+                onClick={skipBlind}
+                style={{background: '#e74c3c'}}
+              >
+                Saltar Ciega (-1 Vida)
               </button>
             </div>
+            
+            <Inventory 
+              inventory={inventory} 
+              activeJokers={activeJokers} 
+              onToggleJoker={toggleActiveJoker}
+              onUseTarot={useTarot}
+              selectedCardsIds={selectedIds}
+            />
           </>
         )}
       </main>

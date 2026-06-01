@@ -21,6 +21,18 @@ button:focus-visible {
   outline: 2px solid var(--accent-gold);
   outline-offset: 2px;
 }
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+.game-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
 .game-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 12px 24px; background: var(--bg-secondary);

@@ -6,6 +6,7 @@ export const JOKERS = [
     rarity: 'common',
     effect: 'addMult',
     value: 4,
+    price: 5,
   },
   {
     id: 'joker-greedy',
@@ -15,6 +16,7 @@ export const JOKERS = [
     effect: 'conditionalChips',
     value: 20,
     condition: 'suit:diamonds',
+    price: 6,
   },
   {
     id: 'joker-lucky',
@@ -24,6 +26,7 @@ export const JOKERS = [
     effect: 'conditionalMulMult',
     value: 1.5,
     condition: 'hand:PAIR',
+    price: 7,
   },
   {
     id: 'joker-flush',
@@ -33,6 +36,7 @@ export const JOKERS = [
     effect: 'conditionalChips',
     value: 30,
     condition: 'hand:FLUSH',
+    price: 8,
   },
   {
     id: 'joker-multiplier',
@@ -41,6 +45,7 @@ export const JOKERS = [
     rarity: 'rare',
     effect: 'mulMult',
     value: 1.5,
+    price: 10,
   },
   {
     id: 'joker-face',
@@ -49,6 +54,7 @@ export const JOKERS = [
     rarity: 'rare',
     effect: 'perFaceCard',
     value: 8,
+    price: 9,
   },
 ];
 

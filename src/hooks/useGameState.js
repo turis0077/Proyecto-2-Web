@@ -4,18 +4,17 @@ import { shuffle, drawCards } from '../utils/deckUtils';
 import { evaluateHand } from '../utils/handEvaluator';
 import { calculateScore } from '../utils/scoreCalculator';
 import { DIFFICULTIES } from '../data/difficulties';
-import { pickRandomTarot } from '../data/tarots';
 
 const HAND_SIZE = 8;
 
-function targetForRound(round, diff) {
-  return Math.round(diff.baseTarget * Math.pow(diff.growth, round - 1));
+function targetForRound(blindIndex, subRound, diff) {
+  const absoluteRound = blindIndex * 5 + subRound;
+  return Math.round(diff.baseTarget * Math.pow(diff.growth, absoluteRound - 1));
 }
 
 function evaluatePhase(state) {
-  if (state.score >= state.target) return 'WON_ROUND';
   if (state.deck.length < 5) return 'GAME_OVER';
-  return 'PLAYING';
+  return state.phase;
 }
 
 export function useGameState(difficultyKey = 'normal') {
@@ -25,54 +24,92 @@ export function useGameState(difficultyKey = 'normal') {
     const shuffled = shuffle(buildDeck());
     const { hand, remaining } = drawCards(shuffled, HAND_SIZE);
     return {
-      round: 1,
+      blindIndex: 0,
+      subRound: 1,
       score: 0,
       hand,
       deck: remaining,
-      target: targetForRound(1, diff),
+      target: targetForRound(0, 1, diff),
       phase: 'PLAYING',
       lives: diff.lives,
       discardsLeft: diff.discards,
-      tarots: [pickRandomTarot(), pickRandomTarot()],
+      handsLeft: 8,
+      money: 10,
+      inventory: { jokers: [], tarots: [] },
+      activeJokers: [],
       tempChipsBonus: 0,
     };
   }, [diff]);
 
   const [state, setState] = useState(init);
 
-  const nextRound = useCallback(() => {
+  const nextBlind = useCallback(() => {
     setState(prev => {
+      if (prev.blindIndex >= 2 && prev.subRound >= 5) return prev; 
+      
+      const isNextBlind = prev.subRound >= 5;
+      const newBlindIndex = isNextBlind ? prev.blindIndex + 1 : prev.blindIndex;
+      const newSubRound = isNextBlind ? 1 : prev.subRound + 1;
+      
       const fresh = shuffle(buildDeck());
       const { hand, remaining } = drawCards(fresh, HAND_SIZE);
-      const r = prev.round + 1;
+      
       return {
-        round: r,
+        ...prev,
+        blindIndex: newBlindIndex,
+        subRound: newSubRound,
         score: 0,
         hand,
         deck: remaining,
-        target: targetForRound(r, diff),
+        target: targetForRound(newBlindIndex, newSubRound, diff),
         phase: 'PLAYING',
-        lives: prev.lives,
         discardsLeft: diff.discards,
-        tarots: prev.tarots,
+        handsLeft: 8,
         tempChipsBonus: 0,
       };
     });
   }, [diff]);
 
-  const addScore = useCallback((points) => {
-    setState(prev => ({ ...prev, score: prev.score + points }));
-  }, []);
-
-  const playHand = useCallback((selectedIds, jokers = []) => {
+  const playHand = useCallback((selectedIds) => {
     setState(prev => {
       const played = prev.hand.filter(c => selectedIds.includes(c.id));
       const handType = evaluateHand(played);
-      let { score: gained, chips, mult } = calculateScore(handType, played, jokers);
+      let { score: gained, chips, mult } = calculateScore(handType, played, prev.activeJokers);
 
       if (prev.tempChipsBonus) {
         chips += prev.tempChipsBonus;
         gained = Math.round(chips * mult);
+      }
+
+      let newScore = prev.score + gained;
+      let newPhase = prev.phase;
+      let newSubRound = prev.subRound;
+      let newBlindIndex = prev.blindIndex;
+      let newHandsLeft = prev.handsLeft - 1;
+      let newMoney = prev.money;
+      let newLives = prev.lives;
+      let newTarget = prev.target;
+
+      if (newScore >= prev.target) {
+        newMoney += 2 + Math.max(0, newHandsLeft);
+        if (newSubRound >= 5 && newBlindIndex === 2) {
+          newPhase = 'GAME_WON';
+        } else {
+          newPhase = 'WON_ROUND'; // Shop phase
+        }
+      } else {
+        if (newHandsLeft <= 0) {
+          newLives -= 1;
+          if (newLives <= 0) {
+            newPhase = 'GAME_OVER';
+          } else {
+            if (newBlindIndex === 2) {
+              newPhase = 'GAME_OVER'; 
+            } else {
+              newPhase = 'WON_ROUND';
+            }
+          }
+        }
       }
 
       const needed = Math.min(selectedIds.length, prev.deck.length);
@@ -95,14 +132,23 @@ export function useGameState(difficultyKey = 'normal') {
         ...prev,
         hand: newHand,
         deck: newDeck,
-        score: prev.score + gained,
+        score: newScore,
+        subRound: newSubRound,
+        handsLeft: newHandsLeft,
+        money: newMoney,
+        lives: newLives,
+        target: newTarget,
+        phase: newPhase,
         lastPlay: { handType, gained, chips, mult },
         tempChipsBonus: 0,
       };
-      updated.phase = evaluatePhase(updated);
+      
+      if (updated.phase === 'PLAYING') {
+        updated.phase = evaluatePhase(updated);
+      }
       return updated;
     });
-  }, []);
+  }, [diff]);
 
   const discard = useCallback((selectedIds) => {
     setState(prev => {
@@ -134,11 +180,30 @@ export function useGameState(difficultyKey = 'normal') {
     });
   }, []);
 
-  const skipRound = useCallback(() => {
+  const skipHand = useCallback(() => {
+    setState(prev => {
+      let newHandsLeft = prev.handsLeft - 1;
+      let newLives = prev.lives;
+      let newPhase = prev.phase;
+
+      if (newHandsLeft <= 0) {
+        newLives -= 1;
+        if (newLives <= 0 || prev.blindIndex === 2) {
+          newPhase = 'GAME_OVER';
+        } else {
+          newPhase = 'WON_ROUND';
+        }
+      }
+
+      return { ...prev, handsLeft: newHandsLeft, lives: newLives, phase: newPhase };
+    });
+  }, []);
+
+  const skipBlind = useCallback(() => {
     setState(prev => ({
       ...prev,
       lives: prev.lives - 1,
-      phase: prev.lives - 1 <= 0 ? 'GAME_OVER' : 'WON_ROUND',
+      phase: prev.lives - 1 <= 0 || prev.blindIndex === 2 ? 'GAME_OVER' : 'WON_ROUND',
     }));
   }, []);
 
@@ -149,9 +214,31 @@ export function useGameState(difficultyKey = 'normal') {
     });
   }, []);
 
+  const buyItem = useCallback((item, type) => {
+    setState(prev => {
+      if (prev.money < item.price) return prev;
+      const updatedInventory = { ...prev.inventory };
+      if (type === 'joker') updatedInventory.jokers = [...updatedInventory.jokers, item];
+      if (type === 'tarot') updatedInventory.tarots = [...updatedInventory.tarots, item];
+      return { ...prev, money: prev.money - item.price, inventory: updatedInventory };
+    });
+  }, []);
+
+  const toggleActiveJoker = useCallback((joker) => {
+    setState(prev => {
+      const isActive = prev.activeJokers.some(j => j.id === joker.id);
+      if (isActive) {
+        return { ...prev, activeJokers: prev.activeJokers.filter(j => j.id !== joker.id) };
+      } else {
+        if (prev.activeJokers.length >= 2) return prev;
+        return { ...prev, activeJokers: [...prev.activeJokers, joker] };
+      }
+    });
+  }, []);
+
   const useTarot = useCallback((tarotId, selectedCardsIds) => {
     setState(prev => {
-      const tarot = prev.tarots.find(t => t.id === tarotId);
+      const tarot = prev.inventory.tarots.find(t => t.id === tarotId);
       if (!tarot) return prev;
 
       let updatedHand = [...prev.hand];
@@ -189,13 +276,12 @@ export function useGameState(difficultyKey = 'normal') {
         }
       }
 
-      const updatedTarots = prev.tarots.filter(t => t.id !== tarotId);
-
+      const updatedTarots = prev.inventory.tarots.filter(t => t.id !== tarotId);
       return {
         ...prev,
         hand: updatedHand,
         deck: updatedDeck,
-        tarots: updatedTarots,
+        inventory: { ...prev.inventory, tarots: updatedTarots },
         tempChipsBonus: updatedTempChipsBonus,
       };
     });
@@ -203,5 +289,17 @@ export function useGameState(difficultyKey = 'normal') {
 
   const resetGame = useCallback(() => setState(init()), [init]);
 
-  return { ...state, nextRound, addScore, playHand, resetGame, loseLife, discard, skipRound, useTarot };
+  return { 
+    ...state, 
+    nextBlind, 
+    playHand, 
+    resetGame, 
+    loseLife, 
+    discard, 
+    skipHand,
+    skipBlind, 
+    buyItem,
+    toggleActiveJoker,
+    useTarot 
+  };
 }

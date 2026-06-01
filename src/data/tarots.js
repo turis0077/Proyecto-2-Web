@@ -6,6 +6,7 @@ export const TAROTS = [
     description: 'Mejora una carta seleccionada: +30 chips permanentes',
     effect: 'enhanceChips',
     value: 30,
+    price: 3,
   },
   {
     id: 'the-magician',
@@ -13,6 +14,7 @@ export const TAROTS = [
     description: 'Convierte hasta 2 cartas seleccionadas en Ases',
     effect: 'transformToAce',
     maxCards: 2,
+    price: 4,
   },
   {
     id: 'the-empress',
@@ -20,6 +22,7 @@ export const TAROTS = [
     description: '+50 chips a la próxima mano',
     effect: 'tempBonusChips',
     value: 50,
+    price: 2,
   },
   {
     id: 'the-tower',
@@ -27,6 +30,7 @@ export const TAROTS = [
     description: 'Destruye 1 carta seleccionada del mazo',
     effect: 'destroyCard',
     maxCards: 1,
+    price: 5,
   },
 ];
 
