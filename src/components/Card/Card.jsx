@@ -16,6 +16,9 @@ function Card({ card, selected = false, onClick, style }) {
       <span className="card__suit-center">{suit.symbol}</span>
       <span className="card__rank-bottom">{rank.label}</span>
       <span className="card__suit-bottom">{suit.symbol}</span>
+      <span className="card__chips-indicator" style={{ position: 'absolute', top: '-25px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(74, 144, 226, 0.9)', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', pointerEvents: 'none', display: selected ? 'block' : 'none' }}>
+        +{rank.chips + (card.chipsBonus || 0)}
+      </span>
     </button>
   );
 }

@@ -33,7 +33,6 @@ export function useGameState(difficultyKey = 'normal') {
       phase: 'PLAYING',
       lives: diff.lives,
       discardsLeft: diff.discards,
-      handsLeft: 8,
       money: 10,
       inventory: { jokers: [], tarots: [] },
       activeJokers: [],
@@ -64,8 +63,8 @@ export function useGameState(difficultyKey = 'normal') {
         target: targetForRound(newBlindIndex, newSubRound, diff),
         phase: 'PLAYING',
         discardsLeft: diff.discards,
-        handsLeft: 8,
         tempChipsBonus: 0,
+        lastPlayResult: null,
       };
     });
   }, [diff]);
@@ -82,33 +81,23 @@ export function useGameState(difficultyKey = 'normal') {
       }
 
       let newScore = prev.score + gained;
-      let newPhase = prev.phase;
       let newSubRound = prev.subRound;
       let newBlindIndex = prev.blindIndex;
-      let newHandsLeft = prev.handsLeft - 1;
       let newMoney = prev.money;
       let newLives = prev.lives;
-      let newTarget = prev.target;
+      let newPhase = 'ROUND_RESULT';
+      let moneyEarned = 0;
+      let won = false;
 
       if (newScore >= prev.target) {
-        newMoney += 2 + Math.max(0, newHandsLeft);
-        if (newSubRound >= 5 && newBlindIndex === 2) {
-          newPhase = 'GAME_WON';
-        } else {
-          newPhase = 'WON_ROUND'; // Shop phase
-        }
+        won = true;
+        moneyEarned = 2 + Math.floor(newScore / prev.target);
+        newMoney += moneyEarned;
       } else {
-        if (newHandsLeft <= 0) {
-          newLives -= 1;
-          if (newLives <= 0) {
-            newPhase = 'GAME_OVER';
-          } else {
-            if (newBlindIndex === 2) {
-              newPhase = 'GAME_OVER'; 
-            } else {
-              newPhase = 'WON_ROUND';
-            }
-          }
+        won = false;
+        newLives -= 1;
+        if (newLives <= 0) {
+          newPhase = 'GAME_OVER';
         }
       }
 
@@ -133,13 +122,11 @@ export function useGameState(difficultyKey = 'normal') {
         hand: newHand,
         deck: newDeck,
         score: newScore,
-        subRound: newSubRound,
-        handsLeft: newHandsLeft,
         money: newMoney,
         lives: newLives,
-        target: newTarget,
         phase: newPhase,
         lastPlay: { handType, gained, chips, mult },
+        lastPlayResult: { won, moneyEarned, score: newScore, target: prev.target },
         tempChipsBonus: 0,
       };
       
@@ -149,6 +136,15 @@ export function useGameState(difficultyKey = 'normal') {
       return updated;
     });
   }, [diff]);
+
+  const continueToShop = useCallback(() => {
+    setState(prev => {
+      if (prev.blindIndex >= 2 && prev.subRound >= 5 && prev.lastPlayResult?.won) {
+        return { ...prev, phase: 'GAME_WON' };
+      }
+      return { ...prev, phase: 'WON_ROUND' };
+    });
+  }, []);
 
   const discard = useCallback((selectedIds) => {
     setState(prev => {
@@ -182,20 +178,14 @@ export function useGameState(difficultyKey = 'normal') {
 
   const skipHand = useCallback(() => {
     setState(prev => {
-      let newHandsLeft = prev.handsLeft - 1;
-      let newLives = prev.lives;
-      let newPhase = prev.phase;
-
-      if (newHandsLeft <= 0) {
-        newLives -= 1;
-        if (newLives <= 0 || prev.blindIndex === 2) {
-          newPhase = 'GAME_OVER';
-        } else {
-          newPhase = 'WON_ROUND';
-        }
-      }
-
-      return { ...prev, handsLeft: newHandsLeft, lives: newLives, phase: newPhase };
+      let newLives = prev.lives - 1;
+      let newPhase = newLives <= 0 ? 'GAME_OVER' : 'ROUND_RESULT';
+      return { 
+        ...prev, 
+        lives: newLives, 
+        phase: newPhase,
+        lastPlayResult: { won: false, moneyEarned: 0, score: 0, target: prev.target }
+      };
     });
   }, []);
 
@@ -298,6 +288,7 @@ export function useGameState(difficultyKey = 'normal') {
     discard, 
     skipHand,
     skipBlind, 
+    continueToShop,
     buyItem,
     toggleActiveJoker,
     useTarot 

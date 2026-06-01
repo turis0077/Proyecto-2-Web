@@ -1,0 +1,50 @@
+.round-result {
+  background: rgba(26, 26, 46, 0.95);
+  padding: 3rem;
+  border-radius: 12px;
+  text-align: center;
+  border: 2px solid #4a90e2;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  animation: slideIn 0.3s ease-out;
+}
+
+.round-result h2 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  color: #fff;
+}
+
+.round-result__stats {
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+  line-height: 1.8;
+}
+
+.money-earned {
+  color: #ffd700;
+}
+
+.life-lost {
+  color: #ff5c5c;
+  font-weight: bold;
+}
+
+.round-result__continue-btn {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 1rem 2.5rem;
+  font-size: 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.round-result__continue-btn:hover {
+  transform: scale(1.05);
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -7,8 +7,11 @@ import ScoreBoard from './components/ScoreBoard/ScoreBoard';
 import GameOver from './components/GameOver/GameOver';
 import Shop from './components/Shop/Shop';
 import Inventory from './components/Inventory/Inventory';
+import RoundResult from './components/RoundResult/RoundResult';
 import { DIFFICULTIES } from './data/difficulties';
 import { audio } from './utils/audioManager';
+import { evaluateHand } from './utils/handEvaluator';
+import { calculateScore } from './utils/scoreCalculator';
 import './styles/global.css';
 
 const MAX_SELECTION = 5;
@@ -24,7 +27,6 @@ function App() {
     deck,
     blindIndex,
     subRound,
-    handsLeft,
     money,
     inventory,
     activeJokers,
@@ -33,12 +35,13 @@ function App() {
     phase,
     lives,
     discardsLeft,
-    lastPlay,
+    lastPlayResult,
+    tempChipsBonus,
     playHand,
     discard,
-    skipHand,
     skipBlind,
     nextBlind,
+    continueToShop,
     buyItem,
     toggleActiveJoker,
     useTarot,
@@ -46,6 +49,20 @@ function App() {
   } = useGameState(difficulty);
 
   const [selectedIds, setSelectedIds] = useState([]);
+
+  // Calculate projected score
+  const projectedHand = hand.filter(c => selectedIds.includes(c.id));
+  let projectedScore = 0;
+  let projectedHandType = '';
+  if (projectedHand.length > 0) {
+    const handType = evaluateHand(projectedHand);
+    let { chips, mult } = calculateScore(handType, projectedHand, activeJokers);
+    if (tempChipsBonus) {
+      chips += tempChipsBonus;
+    }
+    projectedScore = Math.round(chips * mult);
+    projectedHandType = handType;
+  }
 
   useEffect(() => {
     if (showMenu) {
@@ -73,15 +90,17 @@ function App() {
   };
 
   const handlePlayHand = () => {
-    if (selectedIds.length > MAX_SELECTION) return;
-    playHand(selectedIds);
-    setSelectedIds([]);
+    if (selectedIds.length > 0 && selectedIds.length <= MAX_SELECTION) {
+      playHand(selectedIds);
+      setSelectedIds([]);
+    }
   };
 
   const handleDiscard = () => {
-    if (selectedIds.length > MAX_SELECTION) return;
-    discard(selectedIds);
-    setSelectedIds([]);
+    if (selectedIds.length > 0 && selectedIds.length <= MAX_SELECTION) {
+      discard(selectedIds);
+      setSelectedIds([]);
+    }
   };
 
   const handleRestart = () => {
@@ -114,7 +133,7 @@ function App() {
       <header className="game-header">
         <span className="game-header__brand">Not-Balatro 🎰</span>
         <div className="game-header__info" style={{ marginLeft: '1rem', flex: 1, display: 'flex', gap: '1rem' }}>
-          <span style={{color: '#ffd700', fontWeight: 'bold'}}>Dinero: ${money}</span>
+          <span style={{ color: '#ffd700', fontWeight: 'bold' }}>Dinero: ${money}</span>
           <span>{BLIND_NAMES[blindIndex]} - Ronda {subRound}/5</span>
         </div>
         <Lives lives={lives} max={maxLives} />
@@ -132,7 +151,9 @@ function App() {
       </header>
 
       <main className="game-main">
-        {phase === 'WON_ROUND' ? (
+        {phase === 'ROUND_RESULT' ? (
+          <RoundResult result={lastPlayResult} onContinue={continueToShop} />
+        ) : phase === 'WON_ROUND' ? (
           <Shop money={money} onBuy={buyItem} onNextBlind={nextBlind} />
         ) : (
           <>
@@ -140,18 +161,16 @@ function App() {
               round={`${BLIND_NAMES[blindIndex]} - Ronda ${subRound}/5`}
               score={score}
               target={target}
-              chips={lastPlay?.chips || 0}
-              mult={lastPlay?.mult || 0}
             />
 
-            {lastPlay && (
-              <div className="last-play-feedback">
-                ¡Jugaste <strong>{lastPlay.handType}</strong> y ganaste <strong>{lastPlay.gained}</strong> puntos!
+            {projectedHand.length > 0 && (
+              <div className="projected-score" style={{ textAlign: 'center', margin: '1rem', padding: '1rem', background: 'rgba(76, 175, 80, 0.1)', border: '1px solid #4caf50', borderRadius: '8px', color: '#4caf50' }}>
+                <div style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>Proyección: <strong>{projectedHandType}</strong></div>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{projectedScore} pts</div>
               </div>
             )}
 
-            <div className="game-info-bar" style={{display:'flex', justifyContent:'center', gap:'2rem', margin:'1rem 0', fontWeight:'bold', fontSize:'1.1rem'}}>
-              <span>Manos restantes: {handsLeft}</span>
+            <div className="game-info-bar" style={{ display: 'flex', justifyContent: 'center', gap: '2rem', margin: '1rem 0', fontWeight: 'bold', fontSize: '1.1rem' }}>
               <span>Descartes: {discardsLeft}</span>
             </div>
 
@@ -164,35 +183,29 @@ function App() {
                 type="button"
                 onClick={handlePlayHand}
                 disabled={!selectedIds.length}
+                style={{ background: '#4a90e2' }}
               >
-                Jugar mano
+                Jugar Mano
               </button>
               <button
                 type="button"
                 onClick={handleDiscard}
                 disabled={!selectedIds.length || discardsLeft === 0 || selectedIds.length > deck.length}
               >
-                Descartar
-              </button>
-              <button
-                type="button"
-                onClick={skipHand}
-                style={{background: '#8e44ad'}}
-              >
-                Saltar mano
+                Saltar Ronda
               </button>
               <button
                 type="button"
                 onClick={skipBlind}
-                style={{background: '#e74c3c'}}
+                style={{ background: '#e74c3c' }}
               >
                 Saltar Ciega (-1 Vida)
               </button>
             </div>
-            
-            <Inventory 
-              inventory={inventory} 
-              activeJokers={activeJokers} 
+
+            <Inventory
+              inventory={inventory}
+              activeJokers={activeJokers}
               onToggleJoker={toggleActiveJoker}
               onUseTarot={useTarot}
               selectedCardsIds={selectedIds}
