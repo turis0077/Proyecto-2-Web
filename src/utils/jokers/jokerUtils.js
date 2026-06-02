@@ -1,4 +1,4 @@
-import { JOKERS } from '../../data/jokers';
+import { JOKERS } from '../../data/ultis/jokers';
 
 export function pickRandomJokers(n) {
   const selected = [];

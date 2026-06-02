@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { pickRandomJokers } from '../../data/jokers';
+import { pickRandomJokers } from '../../utils/jokers/jokerUtils';
 import Joker from '../Joker/Joker';
 import './JokerSelection.css';
 

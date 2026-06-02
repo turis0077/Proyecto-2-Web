@@ -1,4 +1,4 @@
-# Not-Balatro 🎰
+# Proyecto 2: Not-Balatro 🎰
 Versión simplificada del videojuego Balatro construida en React + Vite
 para el curso Sistemas y Tecnologías Web (UVG, 2026).
 
@@ -7,13 +7,14 @@ para el curso Sistemas y Tecnologías Web (UVG, 2026).
 - Enya Gálvez (GalvezEnya)
 
 
-## Cómo se juega:
-- Se reparte una mano de 8 cartas de una baraja tradicional de 52.
-- Seleccioná hasta 5 cartas para formar una jugada de poker (par, escalera, etc.).
-- El puntaje se calcula como chips × multiplicador.
-- Cada ronda tiene un puntaje objetivo más alto.
-- Al ganar una ronda elegís un joker que potencia tu puntaje.
-- Si se acaba el mazo sin alcanzar el objetivo y se pierden todas las vidas → Game Over.
+## Cómo se juega (Mecánicas Principales):
+- **Estructura del Juego**: Progresas a través de "Ciegas" (Pequeña, Grande y La Casa). Cada ciega consta de hasta 5 rondas donde debes alcanzar un puntaje objetivo.
+- **Cartas y Jugadas**: Se reparte una mano de 8 cartas. Selecciona hasta 5 cartas para formar una jugada de póker (Par, Escalera, Color, etc.).
+- **Puntuación**: El puntaje se calcula multiplicando las Fichas (Chips) de las cartas por un Multiplicador base según la jugada de póker.
+- **Vidas y Derrotas**: Si juegas una mano y no superas el objetivo, pierdes 1 vida. Si acumulas 3 derrotas seguidas o pierdes todas tus vidas → Game Over.
+- **Tienda (Jokers y Tarots)**: Al ganar, obtienes dinero y vas a la Tienda. Puedes equipar hasta 2 Jokers (efectos pasivos permanentes) y comprar Tarots (consumibles de un uso para alterar cartas).
+- **Ediciones Especiales**: A partir de la Ciega Grande, el mazo puede contener cartas Foil, Holo o Polychrome, las cuales otorgan bonos masivos de chips o multiplicadores al jugarse.
+- **Saltos y Descartes**: Puedes "Saltar Ronda" (máx. 2 veces seguidas) para ir a la tienda sin ganar dinero. Puedes "Saltar Ciega" sacrificando vidas. También cuentas con 3 descartes ("Cambiar Cartas") por ronda.
 
 ## Stack
 - React 18 + Vite 5

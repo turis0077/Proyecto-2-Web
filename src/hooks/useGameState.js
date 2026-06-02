@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
-import { buildDeck } from '../data/deck';
+import { buildDeck } from '../data/poker/deck';
 import { shuffle, drawCards } from '../utils/deck/deckUtils';
 import { evaluateHand } from '../utils/hand/handIdentificator';
 import { calculateScore } from '../utils/score/scoreCalculator';
-import { DIFFICULTIES } from '../data/difficulties';
+import { DIFFICULTIES } from '../data/dificulties/difficulties';
 import { generateRiggedHand } from '../utils/hand/handProbabilityManager';
 
 const HAND_SIZE = 8;
@@ -24,7 +24,7 @@ function evaluatePhase(state) {
 export function useGameState(difficultyKey = 'normal') {
   const diff = DIFFICULTIES[difficultyKey] || DIFFICULTIES.normal;
 
-  const init = useCallback(() => {
+  const init = useCallback((d) => {
     const shuffled = shuffle(buildDeck(0));
     const { hand, remaining } = generateRiggedHand(shuffled, HAND_SIZE);
     return {
@@ -33,9 +33,9 @@ export function useGameState(difficultyKey = 'normal') {
       score: 0,
       hand,
       deck: remaining,
-      target: targetForRound(0, 1, diff),
+      target: targetForRound(0, 1, d),
       phase: 'BLIND_INTRO',
-      lives: diff.lives,
+      lives: d.lives,
       consecutiveSkips: 0,
       consecutiveLosses: 0,
       changesLeft: 3,
@@ -44,9 +44,9 @@ export function useGameState(difficultyKey = 'normal') {
       activeJokers: [],
       tempChipsBonus: 0,
     };
-  }, [diff]);
+  }, []);
 
-  const [state, setState] = useState(init);
+  const [state, setState] = useState(() => init(diff));
 
   const nextBlind = useCallback(() => {
     setState(prev => {
@@ -314,7 +314,10 @@ export function useGameState(difficultyKey = 'normal') {
     });
   }, []);
 
-  const resetGame = useCallback(() => setState(init()), [init]);
+  const resetGame = useCallback((newDifficultyKey) => {
+    const activeDiff = DIFFICULTIES[newDifficultyKey] || DIFFICULTIES[difficultyKey] || DIFFICULTIES.normal;
+    setState(init(activeDiff));
+  }, [init, difficultyKey]);
 
   return {
     ...state,

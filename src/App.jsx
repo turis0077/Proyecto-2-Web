@@ -8,11 +8,11 @@ import GameOver from './components/GameOver/GameOver';
 import Shop from './components/Shop/Shop';
 import Inventory from './components/Inventory/Inventory';
 import RoundResult from './components/RoundResult/RoundResult';
-import { DIFFICULTIES } from './data/difficulties';
+import { DIFFICULTIES } from './data/dificulties/difficulties';
 import { audio } from './utils/audioManager';
 import { evaluateHand } from './utils/hand/handIdentificator';
 import { calculateScore } from './utils/score/scoreCalculator';
-import { EDITIONS } from './data/deck';
+import { EDITIONS } from './data/poker/deck';
 import './styles/global.css';
 
 const MAX_SELECTION = 5;
@@ -74,11 +74,11 @@ function App() {
   let projectedChips = 0;
   let projectedMult = 0;
   let projectedEditions = [];
-  
+
   if (projectedHand.length > 0 && !showChangeMenu) {
     const handType = evaluateHand(projectedHand);
     let { chips, mult } = calculateScore(handType, projectedHand, activeJokers);
-    
+
     if (tempChipsBonus) {
       chips += tempChipsBonus;
     }
@@ -115,8 +115,9 @@ function App() {
     });
   };
 
-  const handleStartGame = (selectedDiff) => {
-    setDifficulty(selectedDiff);
+  const handleStartGame = (diff) => {
+    setDifficulty(diff);
+    resetGame(diff);
     setShowMenu(false);
   };
 
@@ -243,20 +244,20 @@ function App() {
             {showChangeMenu && (
               <div className="change-menu-overlay" style={{ background: 'rgba(0,0,0,0.5)', padding: '2rem', borderRadius: '12px', border: '2px solid #a855f7', marginBottom: '2rem', position: 'relative' }}>
                 <h3 style={{ textAlign: 'center', color: '#a855f7', marginTop: 0 }}>Menú de Cambios (Restantes: {changesLeft})</h3>
-                
+
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', minHeight: '150px', alignItems: 'center' }}>
-                  
+
                   {/* The visual deck */}
                   {!changeMode && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <div 
-                        className="visual-deck" 
+                      <div
+                        className="visual-deck"
                         onClick={() => setShowDeckOptions(true)}
                         style={{ width: '80px', height: '120px', background: 'linear-gradient(135deg, #2c3e50, #3498db)', borderRadius: '8px', border: '2px solid #fff', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff', fontSize: '2rem' }}
                       >
                         ?
                       </div>
-                      
+
                       {showDeckOptions && (
                         <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                           <button onClick={() => { replaceFullHand(); setShowChangeMenu(false); setShowDeckOptions(false); }} style={{ background: '#e67e22' }}>
@@ -272,7 +273,7 @@ function App() {
                       )}
 
                       {!showDeckOptions && (
-                        <button 
+                        <button
                           onClick={() => { setShowChangeMenu(false); setChangeMode(null); setShowDeckOptions(false); setSwapHandCard(null); setSwapMysteryCard(null); }}
                           style={{ marginTop: '1.5rem', background: '#7f8c8d' }}
                         >
@@ -288,14 +289,14 @@ function App() {
                       <p style={{ color: '#fff', marginBottom: '1rem' }}>Selecciona 1 carta misteriosa y 1 de tu mano, luego confirma.</p>
                       <div style={{ display: 'flex', gap: '1rem' }}>
                         {[0, 1, 2, 3, 4].map(idx => (
-                          <div 
+                          <div
                             key={idx}
                             onClick={() => setSwapMysteryCard(idx)}
-                            style={{ 
-                              width: '60px', height: '90px', 
-                              background: 'linear-gradient(135deg, #2c3e50, #3498db)', 
-                              borderRadius: '6px', border: swapMysteryCard === idx ? '3px solid #4caf50' : '2px solid #fff', 
-                              cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff' 
+                            style={{
+                              width: '60px', height: '90px',
+                              background: 'linear-gradient(135deg, #2c3e50, #3498db)',
+                              borderRadius: '6px', border: swapMysteryCard === idx ? '3px solid #4caf50' : '2px solid #fff',
+                              cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff'
                             }}
                           >
                             ?
@@ -303,14 +304,14 @@ function App() {
                         ))}
                       </div>
                       <div style={{ display: 'flex', gap: '1rem' }}>
-                        <button 
-                          onClick={handleConfirmSwap} 
+                        <button
+                          onClick={handleConfirmSwap}
                           disabled={swapHandCard === null || swapMysteryCard === null}
                           style={{ marginTop: '1.5rem', background: '#4caf50', opacity: (swapHandCard === null || swapMysteryCard === null) ? 0.5 : 1 }}
                         >
                           Decisión tomada
                         </button>
-                        <button 
+                        <button
                           onClick={() => { setChangeMode(null); setSwapHandCard(null); setSwapMysteryCard(null); }}
                           style={{ marginTop: '1.5rem', background: '#7f8c8d' }}
                         >
@@ -328,10 +329,10 @@ function App() {
             )}
 
             {/* In Change Mode, pass a different selected array to highlight the swap card */}
-            <Hand 
-              cards={hand} 
-              selectedIds={showChangeMenu ? (swapHandCard ? [swapHandCard] : []) : selectedIds} 
-              onToggleCard={toggleCard} 
+            <Hand
+              cards={hand}
+              selectedIds={showChangeMenu ? (swapHandCard ? [swapHandCard] : []) : selectedIds}
+              onToggleCard={toggleCard}
             />
 
             {!showChangeMenu && (
@@ -364,7 +365,7 @@ function App() {
                 </button>
               </div>
             )}
-            
+
             <Inventory
               inventory={inventory}
               activeJokers={activeJokers}

@@ -18,14 +18,31 @@
 .menu__subtitle {
   color: var(--text-muted);
   margin-bottom: 32px;
+  margin-top: 16px;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  padding: 12px;
 }
 
 .menu__difficulty {
   display: flex;
   gap: 8px;
   justify-content: center;
-  margin: 24px 0;
+  margin: 24px 0 16px 0;
   align-items: center;
+}
+
+.menu__diff-desc {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  margin: 0 auto 24px auto;
+  color: #aaa;
+  font-size: 0.9rem;
+  max-width: 300px;
+  min-height: 40px;
 }
 
 .menu__diff-btn {

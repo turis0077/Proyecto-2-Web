@@ -1,4 +1,4 @@
-import { TAROTS } from '../../data/tarots';
+import { TAROTS } from '../../data/ultis/tarots';
 
 export function pickRandomTarot() {
   return TAROTS[Math.floor(Math.random() * TAROTS.length)];

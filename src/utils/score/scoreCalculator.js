@@ -1,5 +1,5 @@
-import { HAND_TYPES } from '../../data/pokerHands';
-import { EDITIONS } from '../../data/deck';
+import { HAND_TYPES } from '../../data/poker/pokerHands';
+import { EDITIONS } from '../../data/poker/deck';
 
 export function appliesCondition(joker, ctx) {
   if (!joker.condition) return true;
@@ -25,7 +25,7 @@ export function calculateScore(handType, cards, jokers = []) {
   // Sumar chips y mult base de cartas y sus ediciones
   cards.forEach(c => {
     let cardChips = c.rank.chips + (c.chipsBonus || 0);
-    
+
     if (c.edition && EDITIONS[c.edition]) {
       cardChips += EDITIONS[c.edition].chipsBonus || 0;
       mult += EDITIONS[c.edition].multBonus || 0;
@@ -46,14 +46,14 @@ export function calculateScore(handType, cards, jokers = []) {
   jokers.forEach(j => {
     if (!appliesCondition(j, ctx)) return;
     switch (j.effect) {
-      case 'addChips':         chips += j.value; break;
-      case 'addMult':          mult  += j.value; break;
-      case 'mulMult':          mult  *= j.value; break;
+      case 'addChips': chips += j.value; break;
+      case 'addMult': mult += j.value; break;
+      case 'mulMult': mult *= j.value; break;
       case 'conditionalChips': chips += j.value; break;
       case 'conditionalMulMult': mult *= j.value; break;
       case 'perFaceCard': {
         // Cuenta figuras (J, Q, K) por separado e individualmente
-        const faces = cards.filter(c => ['J','Q','K'].includes(c.rank.id)).length;
+        const faces = cards.filter(c => ['J', 'Q', 'K'].includes(c.rank.id)).length;
         chips += faces * j.value;
         break;
       }
