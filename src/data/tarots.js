@@ -33,5 +33,3 @@ export const TAROTS = [
     price: 5,
   },
 ];
-
-

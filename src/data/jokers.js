@@ -57,5 +57,3 @@ export const JOKERS = [
     price: 9,
   },
 ];
-
-

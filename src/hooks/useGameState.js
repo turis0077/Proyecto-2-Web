@@ -31,9 +31,10 @@ export function useGameState(difficultyKey = 'normal') {
       hand,
       deck: remaining,
       target: targetForRound(0, 1, diff),
-      phase: 'PLAYING',
+      phase: 'BLIND_INTRO',
       lives: diff.lives,
-      discardsLeft: diff.discards,
+      consecutiveSkips: 0,
+      consecutiveLosses: 0,
       changesLeft: 3,
       money: 10,
       inventory: { jokers: [], tarots: [] },
@@ -63,8 +64,8 @@ export function useGameState(difficultyKey = 'normal') {
         hand,
         deck: remaining,
         target: targetForRound(newBlindIndex, newSubRound, diff),
-        phase: 'PLAYING',
-        discardsLeft: diff.discards,
+        phase: 'BLIND_INTRO',
+        consecutiveSkips: 0,
         tempChipsBonus: 0,
         lastPlayResult: null,
       };
@@ -91,14 +92,19 @@ export function useGameState(difficultyKey = 'normal') {
       let moneyEarned = 0;
       let won = false;
 
+      let newConsecutiveLosses = prev.consecutiveLosses;
+      let newConsecutiveSkips = 0;
+
       if (newScore >= prev.target) {
         won = true;
         moneyEarned = 2 + Math.floor(newScore / prev.target);
         newMoney += moneyEarned;
+        newConsecutiveLosses = 0;
       } else {
         won = false;
         newLives -= 1;
-        if (newLives <= 0) {
+        newConsecutiveLosses += 1;
+        if (newLives <= 0 || newConsecutiveLosses >= 3) {
           newPhase = 'GAME_OVER';
         }
       }
@@ -126,6 +132,8 @@ export function useGameState(difficultyKey = 'normal') {
         score: newScore,
         money: newMoney,
         lives: newLives,
+        consecutiveLosses: newConsecutiveLosses,
+        consecutiveSkips: newConsecutiveSkips,
         phase: newPhase,
         lastPlay: { handType, gained, chips, mult },
         lastPlayResult: { won, moneyEarned, score: newScore, target: prev.target },
@@ -148,35 +156,7 @@ export function useGameState(difficultyKey = 'normal') {
     });
   }, []);
 
-  const discard = useCallback((selectedIds) => {
-    setState(prev => {
-      if (prev.discardsLeft <= 0) return prev;
-      if (selectedIds.length > prev.deck.length) return prev;
 
-      const needed = selectedIds.length;
-      const { hand: drawn, remaining } = drawCards(prev.deck, needed);
-      
-      let drawnIndex = 0;
-      const newHand = prev.hand.map(c => {
-        if (selectedIds.includes(c.id)) {
-          if (drawnIndex < drawn.length) {
-            const newCard = drawn[drawnIndex];
-            drawnIndex++;
-            return newCard;
-          }
-          return null;
-        }
-        return c;
-      }).filter(Boolean);
-
-      return {
-        ...prev,
-        hand: newHand,
-        deck: remaining,
-        discardsLeft: prev.discardsLeft - 1,
-      };
-    });
-  }, []);
 
   const replaceFullHand = useCallback(() => {
     setState(prev => {
@@ -219,25 +199,34 @@ export function useGameState(difficultyKey = 'normal') {
     });
   }, []);
 
-  const skipHand = useCallback(() => {
+  const skipRound = useCallback(() => {
     setState(prev => {
-      let newLives = prev.lives - 1;
-      let newPhase = newLives <= 0 ? 'GAME_OVER' : 'ROUND_RESULT';
+      if (prev.consecutiveSkips >= 2) return prev;
       return { 
         ...prev, 
-        lives: newLives, 
-        phase: newPhase,
-        lastPlayResult: { won: false, moneyEarned: 0, score: 0, target: prev.target }
+        consecutiveSkips: prev.consecutiveSkips + 1, 
+        phase: 'ROUND_RESULT',
+        lastPlayResult: { won: false, skipped: true, consecutiveSkips: prev.consecutiveSkips + 1, moneyEarned: 0, score: 0, target: prev.target }
       };
     });
   }, []);
 
   const skipBlind = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      lives: prev.lives - 1,
-      phase: prev.lives - 1 <= 0 || prev.blindIndex === 2 ? 'GAME_OVER' : 'WON_ROUND',
-    }));
+    setState(prev => {
+      if (prev.blindIndex === 2) return prev;
+      const cost = prev.blindIndex === 0 ? 1 : 2;
+      const newLives = prev.lives - cost;
+      return {
+        ...prev,
+        lives: newLives,
+        subRound: 5,
+        phase: newLives <= 0 ? 'GAME_OVER' : 'WON_ROUND',
+      };
+    });
+  }, []);
+
+  const startBlind = useCallback(() => {
+    setState(prev => ({ ...prev, phase: 'PLAYING' }));
   }, []);
 
   const loseLife = useCallback(() => {
@@ -328,14 +317,14 @@ export function useGameState(difficultyKey = 'normal') {
     playHand, 
     resetGame, 
     loseLife, 
-    discard, 
-    skipHand,
+    skipRound,
     skipBlind, 
     continueToShop,
     buyItem,
     replaceFullHand,
     performCardSwaps,
     toggleActiveJoker,
-    useTarot 
+    useTarot,
+    startBlind
   };
 }

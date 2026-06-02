@@ -33,12 +33,13 @@ function App() {
     target,
     phase,
     lives,
-    discardsLeft,
     changesLeft,
+    consecutiveSkips,
+    consecutiveLosses,
     lastPlayResult,
     tempChipsBonus,
     playHand,
-    discard,
+    skipRound,
     skipBlind,
     nextBlind,
     continueToShop,
@@ -47,6 +48,7 @@ function App() {
     performCardSwaps,
     toggleActiveJoker,
     useTarot,
+    startBlind,
     resetGame,
   } = useGameState(difficulty);
 
@@ -58,6 +60,11 @@ function App() {
   const [changeMode, setChangeMode] = useState(null); // 'SPECIFIC'
   const [swapHandCard, setSwapHandCard] = useState(null);
   const [swapMysteryCard, setSwapMysteryCard] = useState(null);
+
+  // Reset selection on phase/round change or when entering/exiting change menu
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [phase, subRound, blindIndex, showChangeMenu]);
 
   // Calculate projected score
   const projectedHand = hand.filter(c => selectedIds.includes(c.id));
@@ -112,12 +119,7 @@ function App() {
     }
   };
 
-  const handleDiscard = () => {
-    if (selectedIds.length > 0 && selectedIds.length <= MAX_SELECTION) {
-      discard(selectedIds);
-      setSelectedIds([]);
-    }
-  };
+
 
   const handleRestart = () => {
     resetGame();
@@ -177,13 +179,31 @@ function App() {
               handleRestart();
             }
           }}
+          style={{ marginLeft: '2rem' }}
         >
           ↻ Reiniciar
         </button>
       </header>
 
       <main className="game-main">
-        {phase === 'ROUND_RESULT' ? (
+        {phase === 'BLIND_INTRO' ? (
+          <div className="blind-intro" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '2rem' }}>
+            <h2 style={{ fontSize: '2.5rem', color: '#ffd700', margin: 0 }}>{BLIND_NAMES[blindIndex]}</h2>
+            <p style={{ fontSize: '1.5rem', margin: 0 }}>Ronda {subRound}/5</p>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '2rem', borderRadius: '12px', textAlign: 'center' }}>
+              <p style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>Objetivo de la Ronda:</p>
+              <p style={{ fontSize: '3rem', fontWeight: 'bold', color: '#4caf50', margin: 0 }}>{target} pts</p>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+              <button onClick={startBlind} style={{ background: '#4a90e2', padding: '1rem 2rem', fontSize: '1.2rem' }}>Jugar Ciega</button>
+              {blindIndex < 2 && (
+                <button onClick={skipBlind} style={{ background: '#e74c3c', padding: '1rem 2rem', fontSize: '1.2rem' }}>
+                  Saltar Ciega (-{blindIndex === 0 ? 1 : 2} {blindIndex === 0 ? 'Vida' : 'Vidas'})
+                </button>
+              )}
+            </div>
+          </div>
+        ) : phase === 'ROUND_RESULT' ? (
           <RoundResult result={lastPlayResult} onContinue={continueToShop} />
         ) : phase === 'WON_ROUND' ? (
           <Shop money={money} onBuy={buyItem} onNextBlind={nextBlind} />
@@ -203,7 +223,8 @@ function App() {
             )}
 
             <div className="game-info-bar" style={{ display: 'flex', justifyContent: 'center', gap: '2rem', margin: '1rem 0', fontWeight: 'bold', fontSize: '1.1rem' }}>
-              <span>Descartes: {discardsLeft}</span>
+              <span>Derrotas Seguidas: {consecutiveLosses} / 3</span>
+              <span>Saltos Seguidos: {consecutiveSkips} / 2</span>
             </div>
 
             {/* Change Menu UI */}
@@ -238,6 +259,9 @@ function App() {
                           <button onClick={() => { setChangeMode('SPECIFIC'); setShowDeckOptions(false); }} style={{ background: '#9b59b6' }}>
                             Cambiar Cartas
                           </button>
+                          <button onClick={() => { setShowChangeMenu(false); setShowDeckOptions(false); }} style={{ background: '#7f8c8d' }}>
+                            Regresar
+                          </button>
                         </div>
                       )}
                     </div>
@@ -263,13 +287,21 @@ function App() {
                           </div>
                         ))}
                       </div>
-                      <button 
-                        onClick={handleConfirmSwap} 
-                        disabled={swapHandCard === null || swapMysteryCard === null}
-                        style={{ marginTop: '1.5rem', background: '#4caf50', opacity: (swapHandCard === null || swapMysteryCard === null) ? 0.5 : 1 }}
-                      >
-                        Decisión tomada
-                      </button>
+                      <div style={{ display: 'flex', gap: '1rem' }}>
+                        <button 
+                          onClick={handleConfirmSwap} 
+                          disabled={swapHandCard === null || swapMysteryCard === null}
+                          style={{ marginTop: '1.5rem', background: '#4caf50', opacity: (swapHandCard === null || swapMysteryCard === null) ? 0.5 : 1 }}
+                        >
+                          Decisión tomada
+                        </button>
+                        <button 
+                          onClick={() => { setChangeMode(null); setSwapHandCard(null); setSwapMysteryCard(null); }}
+                          style={{ marginTop: '1.5rem', background: '#7f8c8d' }}
+                        >
+                          Regresar
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -309,17 +341,11 @@ function App() {
                 </button>
                 <button
                   type="button"
-                  onClick={handleDiscard}
-                  disabled={!selectedIds.length || discardsLeft === 0 || selectedIds.length > deck.length}
+                  onClick={skipRound}
+                  disabled={consecutiveSkips >= 2}
+                  style={{ opacity: consecutiveSkips >= 2 ? 0.5 : 1 }}
                 >
                   Saltar Ronda
-                </button>
-                <button
-                  type="button"
-                  onClick={skipBlind}
-                  style={{ background: '#e74c3c' }}
-                >
-                  Saltar Ciega (-1 Vida)
                 </button>
               </div>
             )}
@@ -328,7 +354,10 @@ function App() {
               inventory={inventory}
               activeJokers={activeJokers}
               onToggleJoker={toggleActiveJoker}
-              onUseTarot={useTarot}
+              onUseTarot={(tarotId, selectedCardsIds) => {
+                useTarot(tarotId, selectedCardsIds);
+                setSelectedIds([]);
+              }}
               selectedCardsIds={selectedIds}
             />
           </>
