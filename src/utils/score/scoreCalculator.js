@@ -1,5 +1,5 @@
-import { HAND_TYPES } from '../data/pokerHands';
-import { EDITIONS } from '../data/deck';
+import { HAND_TYPES } from '../../data/pokerHands';
+import { EDITIONS } from '../../data/deck';
 
 export function appliesCondition(joker, ctx) {
   if (!joker.condition) return true;

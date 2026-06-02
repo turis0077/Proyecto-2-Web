@@ -58,7 +58,4 @@ export const JOKERS = [
   },
 ];
 
-export function pickRandomJokers(n) {
-  const shuffled = [...JOKERS].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, n);
-}
+

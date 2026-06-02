@@ -34,6 +34,4 @@ export const TAROTS = [
   },
 ];
 
-export function pickRandomTarot() {
-  return TAROTS[Math.floor(Math.random() * TAROTS.length)];
-}
+

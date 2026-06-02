@@ -1,47 +1,51 @@
 import { useState, useEffect } from 'react';
-import { pickRandomJokers } from '../../data/jokers';
-import { pickRandomTarot } from '../../data/tarots';
+import { pickRandomJokers } from '../../utils/jokers/jokerUtils';
+import { pickRandomTarots } from '../../utils/tarot/tarotUtils';
 import Joker from '../Joker/Joker';
 import './Shop.css';
 
 function Shop({ money, onBuy, onNextBlind }) {
   const [jokers, setJokers] = useState([]);
-  const [tarot, setTarot] = useState(null);
+  const [tarots, setTarots] = useState([]);
   const [selectedJokers, setSelectedJokers] = useState([]);
-  const [selectedTarot, setSelectedTarot] = useState(false);
+  const [selectedTarots, setSelectedTarots] = useState([]);
 
   useEffect(() => {
-    setJokers(pickRandomJokers(2));
-    setTarot(pickRandomTarot());
+    setJokers(pickRandomJokers(3));
+    setTarots(pickRandomTarots(2));
   }, []);
 
   const totalCost = 
     selectedJokers.reduce((acc, j) => acc + j.price, 0) + 
-    (selectedTarot && tarot ? tarot.price : 0);
+    selectedTarots.reduce((acc, t) => acc + t.price, 0);
 
   const handleBuySelection = () => {
     if (money >= totalCost) {
       selectedJokers.forEach(j => onBuy(j, 'joker'));
-      if (selectedTarot && tarot) onBuy(tarot, 'tarot');
+      selectedTarots.forEach(t => onBuy(t, 'tarot'));
       
       setJokers(prev => prev.filter(j => !selectedJokers.includes(j)));
       setSelectedJokers([]);
       
-      if (selectedTarot) {
-        setTarot(null);
-        setSelectedTarot(false);
-      }
+      setTarots(prev => prev.filter(t => !selectedTarots.includes(t)));
+      setSelectedTarots([]);
     }
   };
 
   const toggleJokerSelection = (j) => {
-    setSelectedJokers(prev => 
-      prev.includes(j) ? prev.filter(item => item !== j) : [...prev, j]
-    );
+    setSelectedJokers(prev => {
+      if (prev.includes(j)) return prev.filter(item => item !== j);
+      if (prev.length >= 2) return prev; // Limit to max 2 jokers
+      return [...prev, j];
+    });
   };
 
-  const toggleTarotSelection = () => {
-    setSelectedTarot(prev => !prev);
+  const toggleTarotSelection = (t) => {
+    setSelectedTarots(prev => {
+      if (prev.includes(t)) return prev.filter(item => item !== t);
+      if (prev.length >= 1) return prev; // Limit to max 1 tarot
+      return [...prev, t];
+    });
   };
 
   return (
@@ -73,21 +77,26 @@ function Shop({ money, onBuy, onNextBlind }) {
 
         <div className="shop__tarots">
           <h3>Tarots</h3>
-          {tarot ? (
-            <div 
-              className={`shop__item shop__item--tarot ${selectedTarot ? 'shop__item--selected' : ''}`}
-              onClick={toggleTarotSelection}
-              style={{ cursor: 'pointer', border: selectedTarot ? '2px solid #4caf50' : '2px solid transparent', padding: '0.5rem', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-            >
-              <div className="tarot-card">
-                <h4>{tarot.name}</h4>
-                <p>{tarot.description}</p>
-              </div>
-              <p>${tarot.price}</p>
-            </div>
-          ) : (
-            <p>Agotado</p>
-          )}
+          <div className="shop__tarots-list" style={{ display: 'flex', gap: '1rem', overflowX: 'auto' }}>
+            {tarots.map(t => {
+              const isSelected = selectedTarots.includes(t);
+              return (
+                <div 
+                  key={t.id}
+                  className={`shop__item shop__item--tarot ${isSelected ? 'shop__item--selected' : ''}`}
+                  onClick={() => toggleTarotSelection(t)}
+                  style={{ cursor: 'pointer', border: isSelected ? '2px solid #4caf50' : '2px solid transparent', padding: '0.5rem', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '150px' }}
+                >
+                  <div className="tarot-card">
+                    <h4>{t.name}</h4>
+                    <p>{t.description}</p>
+                  </div>
+                  <p>${t.price}</p>
+                </div>
+              );
+            })}
+            {tarots.length === 0 && <p>Agotado</p>}
+          </div>
         </div>
       </div>
 

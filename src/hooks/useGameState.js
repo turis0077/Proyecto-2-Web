@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react';
 import { buildDeck } from '../data/deck';
-import { shuffle, drawCards } from '../utils/deckUtils';
-import { evaluateHand } from '../utils/handEvaluator';
-import { calculateScore } from '../utils/scoreCalculator';
+import { shuffle, drawCards } from '../utils/deck/deckUtils';
+import { evaluateHand } from '../utils/hand/handIdentificator';
+import { calculateScore } from '../utils/score/scoreCalculator';
 import { DIFFICULTIES } from '../data/difficulties';
+import { generateRiggedHand } from '../utils/hand/handProbabilityManager';
 
 const HAND_SIZE = 8;
 
@@ -22,7 +23,7 @@ export function useGameState(difficultyKey = 'normal') {
 
   const init = useCallback(() => {
     const shuffled = shuffle(buildDeck());
-    const { hand, remaining } = drawCards(shuffled, HAND_SIZE);
+    const { hand, remaining } = generateRiggedHand(shuffled, HAND_SIZE);
     return {
       blindIndex: 0,
       subRound: 1,
@@ -33,6 +34,7 @@ export function useGameState(difficultyKey = 'normal') {
       phase: 'PLAYING',
       lives: diff.lives,
       discardsLeft: diff.discards,
+      changesLeft: 3,
       money: 10,
       inventory: { jokers: [], tarots: [] },
       activeJokers: [],
@@ -51,7 +53,7 @@ export function useGameState(difficultyKey = 'normal') {
       const newSubRound = isNextBlind ? 1 : prev.subRound + 1;
       
       const fresh = shuffle(buildDeck());
-      const { hand, remaining } = drawCards(fresh, HAND_SIZE);
+      const { hand, remaining } = generateRiggedHand(fresh, HAND_SIZE);
       
       return {
         ...prev,
@@ -176,6 +178,47 @@ export function useGameState(difficultyKey = 'normal') {
     });
   }, []);
 
+  const replaceFullHand = useCallback(() => {
+    setState(prev => {
+      if (prev.changesLeft <= 0) return prev;
+      const { hand, remaining } = generateRiggedHand(prev.deck, HAND_SIZE);
+      return {
+        ...prev,
+        hand,
+        deck: remaining,
+        changesLeft: prev.changesLeft - 1,
+      };
+    });
+  }, []);
+
+  const performCardSwaps = useCallback((handCardIds) => {
+    setState(prev => {
+      if (prev.changesLeft <= 0 || handCardIds.length === 0) return prev;
+      const needed = handCardIds.length;
+      const { hand: drawn, remaining } = drawCards(prev.deck, needed);
+      
+      let drawnIndex = 0;
+      const newHand = prev.hand.map(c => {
+        if (handCardIds.includes(c.id)) {
+          if (drawnIndex < drawn.length) {
+            const newCard = drawn[drawnIndex];
+            drawnIndex++;
+            return newCard;
+          }
+          return null;
+        }
+        return c;
+      }).filter(Boolean);
+
+      return {
+        ...prev,
+        hand: newHand,
+        deck: remaining,
+        changesLeft: prev.changesLeft - 1,
+      };
+    });
+  }, []);
+
   const skipHand = useCallback(() => {
     setState(prev => {
       let newLives = prev.lives - 1;
@@ -290,6 +333,8 @@ export function useGameState(difficultyKey = 'normal') {
     skipBlind, 
     continueToShop,
     buyItem,
+    replaceFullHand,
+    performCardSwaps,
     toggleActiveJoker,
     useTarot 
   };

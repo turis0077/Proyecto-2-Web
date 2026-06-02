@@ -10,12 +10,11 @@ import Inventory from './components/Inventory/Inventory';
 import RoundResult from './components/RoundResult/RoundResult';
 import { DIFFICULTIES } from './data/difficulties';
 import { audio } from './utils/audioManager';
-import { evaluateHand } from './utils/handEvaluator';
-import { calculateScore } from './utils/scoreCalculator';
+import { evaluateHand } from './utils/hand/handIdentificator';
+import { calculateScore } from './utils/score/scoreCalculator';
 import './styles/global.css';
 
 const MAX_SELECTION = 5;
-
 const BLIND_NAMES = ['Ciega Pequeña', 'Ciega Grande', 'La Casa'];
 
 function App() {
@@ -35,6 +34,7 @@ function App() {
     phase,
     lives,
     discardsLeft,
+    changesLeft,
     lastPlayResult,
     tempChipsBonus,
     playHand,
@@ -43,6 +43,8 @@ function App() {
     nextBlind,
     continueToShop,
     buyItem,
+    replaceFullHand,
+    performCardSwaps,
     toggleActiveJoker,
     useTarot,
     resetGame,
@@ -50,11 +52,18 @@ function App() {
 
   const [selectedIds, setSelectedIds] = useState([]);
 
+  // Change Menu State
+  const [showChangeMenu, setShowChangeMenu] = useState(false);
+  const [showDeckOptions, setShowDeckOptions] = useState(false);
+  const [changeMode, setChangeMode] = useState(null); // 'SPECIFIC'
+  const [swapHandCard, setSwapHandCard] = useState(null);
+  const [swapMysteryCard, setSwapMysteryCard] = useState(null);
+
   // Calculate projected score
   const projectedHand = hand.filter(c => selectedIds.includes(c.id));
   let projectedScore = 0;
   let projectedHandType = '';
-  if (projectedHand.length > 0) {
+  if (projectedHand.length > 0 && !showChangeMenu) {
     const handType = evaluateHand(projectedHand);
     let { chips, mult } = calculateScore(handType, projectedHand, activeJokers);
     if (tempChipsBonus) {
@@ -77,6 +86,13 @@ function App() {
   }, [showMenu, phase, score, target]);
 
   const toggleCard = (cardId) => {
+    if (showChangeMenu) {
+      if (changeMode === 'SPECIFIC') {
+        setSwapHandCard(prev => prev === cardId ? null : cardId);
+      }
+      return;
+    }
+
     setSelectedIds(prev => {
       if (prev.includes(cardId)) return prev.filter(id => id !== cardId);
       if (prev.length >= MAX_SELECTION) return prev;
@@ -106,6 +122,22 @@ function App() {
   const handleRestart = () => {
     resetGame();
     setShowMenu(true);
+    setShowChangeMenu(false);
+    setChangeMode(null);
+    setShowDeckOptions(false);
+  };
+
+  const handleConfirmSwap = () => {
+    if (swapHandCard && swapMysteryCard !== null) {
+      performCardSwaps([swapHandCard]);
+      setSwapHandCard(null);
+      setSwapMysteryCard(null);
+      if (changesLeft <= 1) {
+        // Just used the last change
+        setShowChangeMenu(false);
+        setChangeMode(null);
+      }
+    }
   };
 
   if (showMenu) {
@@ -163,7 +195,7 @@ function App() {
               target={target}
             />
 
-            {projectedHand.length > 0 && (
+            {projectedHand.length > 0 && !showChangeMenu && (
               <div className="projected-score" style={{ textAlign: 'center', margin: '1rem', padding: '1rem', background: 'rgba(76, 175, 80, 0.1)', border: '1px solid #4caf50', borderRadius: '8px', color: '#4caf50' }}>
                 <div style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>Proyección: <strong>{projectedHandType}</strong></div>
                 <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{projectedScore} pts</div>
@@ -174,35 +206,124 @@ function App() {
               <span>Descartes: {discardsLeft}</span>
             </div>
 
-            <p className="selection-count">Cartas seleccionadas: {selectedIds.length} / {MAX_SELECTION} (Restantes: {MAX_SELECTION - selectedIds.length})</p>
+            {/* Change Menu UI */}
+            {showChangeMenu && (
+              <div className="change-menu-overlay" style={{ background: 'rgba(0,0,0,0.5)', padding: '2rem', borderRadius: '12px', border: '2px solid #a855f7', marginBottom: '2rem', position: 'relative' }}>
+                <button 
+                  onClick={() => { setShowChangeMenu(false); setChangeMode(null); setShowDeckOptions(false); setSwapHandCard(null); setSwapMysteryCard(null); }} 
+                  style={{ position: 'absolute', top: '10px', right: '10px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}
+                >
+                  ✖
+                </button>
+                <h3 style={{ textAlign: 'center', color: '#a855f7', marginTop: 0 }}>Menú de Cambios (Restantes: {changesLeft})</h3>
+                
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', minHeight: '150px', alignItems: 'center' }}>
+                  
+                  {/* The visual deck */}
+                  {!changeMode && (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div 
+                        className="visual-deck" 
+                        onClick={() => setShowDeckOptions(true)}
+                        style={{ width: '80px', height: '120px', background: 'linear-gradient(135deg, #2c3e50, #3498db)', borderRadius: '8px', border: '2px solid #fff', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff', fontSize: '2rem' }}
+                      >
+                        ?
+                      </div>
+                      
+                      {showDeckOptions && (
+                        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                          <button onClick={() => { replaceFullHand(); setShowChangeMenu(false); setShowDeckOptions(false); }} style={{ background: '#e67e22' }}>
+                            Cambiar Mano
+                          </button>
+                          <button onClick={() => { setChangeMode('SPECIFIC'); setShowDeckOptions(false); }} style={{ background: '#9b59b6' }}>
+                            Cambiar Cartas
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-            <Hand cards={hand} selectedIds={selectedIds} onToggleCard={toggleCard} />
+                  {/* Specific cards mode */}
+                  {changeMode === 'SPECIFIC' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                      <p style={{ color: '#fff', marginBottom: '1rem' }}>Selecciona 1 carta misteriosa y 1 de tu mano, luego confirma.</p>
+                      <div style={{ display: 'flex', gap: '1rem' }}>
+                        {[0, 1, 2, 3, 4].map(idx => (
+                          <div 
+                            key={idx}
+                            onClick={() => setSwapMysteryCard(idx)}
+                            style={{ 
+                              width: '60px', height: '90px', 
+                              background: 'linear-gradient(135deg, #2c3e50, #3498db)', 
+                              borderRadius: '6px', border: swapMysteryCard === idx ? '3px solid #4caf50' : '2px solid #fff', 
+                              cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff' 
+                            }}
+                          >
+                            ?
+                          </div>
+                        ))}
+                      </div>
+                      <button 
+                        onClick={handleConfirmSwap} 
+                        disabled={swapHandCard === null || swapMysteryCard === null}
+                        style={{ marginTop: '1.5rem', background: '#4caf50', opacity: (swapHandCard === null || swapMysteryCard === null) ? 0.5 : 1 }}
+                      >
+                        Decisión tomada
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
-            <div className="actions">
-              <button
-                type="button"
-                onClick={handlePlayHand}
-                disabled={!selectedIds.length}
-                style={{ background: '#4a90e2' }}
-              >
-                Jugar Mano
-              </button>
-              <button
-                type="button"
-                onClick={handleDiscard}
-                disabled={!selectedIds.length || discardsLeft === 0 || selectedIds.length > deck.length}
-              >
-                Saltar Ronda
-              </button>
-              <button
-                type="button"
-                onClick={skipBlind}
-                style={{ background: '#e74c3c' }}
-              >
-                Saltar Ciega (-1 Vida)
-              </button>
-            </div>
+            {!showChangeMenu && (
+              <p className="selection-count">Cartas seleccionadas: {selectedIds.length} / {MAX_SELECTION} (Restantes: {MAX_SELECTION - selectedIds.length})</p>
+            )}
 
+            {/* In Change Mode, pass a different selected array to highlight the swap card */}
+            <Hand 
+              cards={hand} 
+              selectedIds={showChangeMenu ? (swapHandCard ? [swapHandCard] : []) : selectedIds} 
+              onToggleCard={toggleCard} 
+            />
+
+            {!showChangeMenu && (
+              <div className="actions">
+                <button
+                  type="button"
+                  onClick={handlePlayHand}
+                  disabled={!selectedIds.length}
+                  style={{ background: '#4a90e2' }}
+                >
+                  Jugar Mano
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (changesLeft > 0) setShowChangeMenu(true);
+                  }}
+                  disabled={changesLeft <= 0}
+                  style={{ background: '#9b59b6', opacity: changesLeft <= 0 ? 0.5 : 1 }}
+                >
+                  Cambiar ({changesLeft})
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDiscard}
+                  disabled={!selectedIds.length || discardsLeft === 0 || selectedIds.length > deck.length}
+                >
+                  Saltar Ronda
+                </button>
+                <button
+                  type="button"
+                  onClick={skipBlind}
+                  style={{ background: '#e74c3c' }}
+                >
+                  Saltar Ciega (-1 Vida)
+                </button>
+              </div>
+            )}
+            
             <Inventory
               inventory={inventory}
               activeJokers={activeJokers}
