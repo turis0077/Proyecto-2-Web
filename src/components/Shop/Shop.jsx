@@ -9,6 +9,7 @@ function Shop({ money, onBuy, onNextBlind }) {
   const [tarots, setTarots] = useState([]);
   const [selectedJokers, setSelectedJokers] = useState([]);
   const [selectedTarots, setSelectedTarots] = useState([]);
+  const [infoCardId, setInfoCardId] = useState(null);
 
   useEffect(() => {
     setJokers(pickRandomJokers(3));
@@ -34,7 +35,7 @@ function Shop({ money, onBuy, onNextBlind }) {
 
   const toggleJokerSelection = (j) => {
     setSelectedJokers(prev => {
-      if (prev.includes(j)) return prev.filter(item => item !== j);
+      if (prev.some(item => item.instanceId === j.instanceId)) return prev.filter(item => item.instanceId !== j.instanceId);
       if (prev.length >= 2) return prev; // Limit to max 2 jokers
       return [...prev, j];
     });
@@ -42,7 +43,7 @@ function Shop({ money, onBuy, onNextBlind }) {
 
   const toggleTarotSelection = (t) => {
     setSelectedTarots(prev => {
-      if (prev.includes(t)) return prev.filter(item => item !== t);
+      if (prev.some(item => item.instanceId === t.instanceId)) return prev.filter(item => item.instanceId !== t.instanceId);
       if (prev.length >= 1) return prev; // Limit to max 1 tarot
       return [...prev, t];
     });
@@ -58,16 +59,34 @@ function Shop({ money, onBuy, onNextBlind }) {
           <h3>Comodines</h3>
           <div className="shop__jokers-list">
             {jokers.map(j => {
-              const isSelected = selectedJokers.includes(j);
+              const isSelected = selectedJokers.some(sel => sel.instanceId === j.instanceId);
               return (
                 <div 
-                  key={j.id} 
+                  key={j.instanceId} 
                   className={`shop__item ${isSelected ? 'shop__item--selected' : ''}`}
                   onClick={() => toggleJokerSelection(j)}
-                  style={{ cursor: 'pointer', border: isSelected ? '2px solid #4caf50' : '2px solid transparent', padding: '0.5rem', borderRadius: '8px' }}
+                  style={{ position: 'relative', cursor: 'pointer', border: isSelected ? '2px solid #4caf50' : '2px solid transparent', padding: '0.5rem', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
                 >
                   <Joker joker={j} />
                   <p>${j.price}</p>
+                  
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setInfoCardId(j.instanceId); }}
+                    style={{ background: '#3498db', color: 'white', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '0.7rem', marginTop: '4px' }}
+                  >
+                    Ver info
+                  </button>
+
+                  {infoCardId === j.instanceId && (
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(44, 62, 80, 0.95)', color: 'white', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 20, padding: '0.5rem', boxSizing: 'border-box', borderRadius: '8px' }}>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setInfoCardId(null); }}
+                        style={{ position: 'absolute', top: '2px', right: '4px', background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1rem' }}
+                      >✖</button>
+                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem', color: '#f39c12' }}>{j.name}</h4>
+                      <p style={{ margin: 0, fontSize: '0.7rem', textAlign: 'center' }}>{j.description}</p>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -79,19 +98,36 @@ function Shop({ money, onBuy, onNextBlind }) {
           <h3>Tarots</h3>
           <div className="shop__tarots-list" style={{ display: 'flex', gap: '1rem', overflowX: 'auto' }}>
             {tarots.map(t => {
-              const isSelected = selectedTarots.includes(t);
+              const isSelected = selectedTarots.some(sel => sel.instanceId === t.instanceId);
               return (
                 <div 
-                  key={t.id}
+                  key={t.instanceId}
                   className={`shop__item shop__item--tarot ${isSelected ? 'shop__item--selected' : ''}`}
                   onClick={() => toggleTarotSelection(t)}
-                  style={{ cursor: 'pointer', border: isSelected ? '2px solid #4caf50' : '2px solid transparent', padding: '0.5rem', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '150px' }}
+                  style={{ position: 'relative', cursor: 'pointer', border: isSelected ? '2px solid #4caf50' : '2px solid transparent', padding: '0.5rem', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '150px' }}
                 >
                   <div className="tarot-card">
                     <h4>{t.name}</h4>
-                    <p>{t.description}</p>
                   </div>
                   <p>${t.price}</p>
+
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setInfoCardId(t.instanceId); }}
+                    style={{ background: '#3498db', color: 'white', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '0.7rem', marginTop: '4px' }}
+                  >
+                    Ver info
+                  </button>
+
+                  {infoCardId === t.instanceId && (
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(44, 62, 80, 0.95)', color: 'white', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 20, padding: '0.5rem', boxSizing: 'border-box', borderRadius: '8px' }}>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setInfoCardId(null); }}
+                        style={{ position: 'absolute', top: '2px', right: '4px', background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1rem' }}
+                      >✖</button>
+                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem', color: '#f39c12' }}>{t.name}</h4>
+                      <p style={{ margin: 0, fontSize: '0.7rem', textAlign: 'center' }}>{t.description}</p>
+                    </div>
+                  )}
                 </div>
               );
             })}

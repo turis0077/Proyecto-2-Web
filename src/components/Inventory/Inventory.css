@@ -9,7 +9,7 @@
   padding: 1rem;
   color: white;
   z-index: 1000;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -22,21 +22,67 @@
   text-transform: uppercase;
 }
 
-.inventory__items {
+.inventory__carousel-container {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 8px;
+}
+
+.carousel-btn {
+  width: 11px;
+  height: 44px;
+  background: transparent;
+  border: 1px solid #666;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.carousel-btn:hover {
+  background: #333;
+  border-color: #888;
+}
+
+.inventory__carousel-view {
+  width: 168px;
+  /* exactly two 80px cards + 8px gap */
+  overflow: hidden;
+  flex-shrink: 0;
+  margin: 0 auto;
+}
+
+.inventory__carousel-track {
+  display: flex;
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  gap: 8px;
 }
 
 .inventory__item {
   background: #2a2a4a;
   border: 1px solid #444;
-  border-radius: 4px;
-  padding: 0.5rem;
+  border-radius: 10px;
+  padding: 4px;
   cursor: pointer;
-  flex: 1 1 45%;
-  font-size: 0.8rem;
+  flex: 0 0 80px;
+  width: 80px;
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  box-sizing: border-box;
+  font-size: 0.75rem;
   transition: all 0.2s;
+  word-break: break-word;
+  overflow: hidden;
 }
 
 .inventory__item:hover {

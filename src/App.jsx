@@ -242,12 +242,6 @@ function App() {
             {/* Change Menu UI */}
             {showChangeMenu && (
               <div className="change-menu-overlay" style={{ background: 'rgba(0,0,0,0.5)', padding: '2rem', borderRadius: '12px', border: '2px solid #a855f7', marginBottom: '2rem', position: 'relative' }}>
-                <button 
-                  onClick={() => { setShowChangeMenu(false); setChangeMode(null); setShowDeckOptions(false); setSwapHandCard(null); setSwapMysteryCard(null); }} 
-                  style={{ position: 'absolute', top: '10px', right: '10px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}
-                >
-                  ✖
-                </button>
                 <h3 style={{ textAlign: 'center', color: '#a855f7', marginTop: 0 }}>Menú de Cambios (Restantes: {changesLeft})</h3>
                 
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', minHeight: '150px', alignItems: 'center' }}>
@@ -275,6 +269,15 @@ function App() {
                             Regresar
                           </button>
                         </div>
+                      )}
+
+                      {!showDeckOptions && (
+                        <button 
+                          onClick={() => { setShowChangeMenu(false); setChangeMode(null); setShowDeckOptions(false); setSwapHandCard(null); setSwapMysteryCard(null); }}
+                          style={{ marginTop: '1.5rem', background: '#7f8c8d' }}
+                        >
+                          Regresar
+                        </button>
                       )}
                     </div>
                   )}

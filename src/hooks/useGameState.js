@@ -243,17 +243,19 @@ export function useGameState(difficultyKey = 'normal') {
     setState(prev => {
       if (prev.money < item.price) return prev;
       const updatedInventory = { ...prev.inventory };
-      if (type === 'joker') updatedInventory.jokers = [...updatedInventory.jokers, item];
-      if (type === 'tarot') updatedInventory.tarots = [...updatedInventory.tarots, item];
+      const itemWithInstanceId = { ...item, instanceId: Date.now() + Math.random().toString() };
+      if (type === 'joker') updatedInventory.jokers = [...updatedInventory.jokers, itemWithInstanceId];
+      if (type === 'tarot') updatedInventory.tarots = [...updatedInventory.tarots, itemWithInstanceId];
       return { ...prev, money: prev.money - item.price, inventory: updatedInventory };
     });
   }, []);
 
   const toggleActiveJoker = useCallback((joker) => {
     setState(prev => {
-      const isActive = prev.activeJokers.some(j => j.id === joker.id);
+      const uniqueId = joker.instanceId || joker.id;
+      const isActive = prev.activeJokers.some(j => (j.instanceId || j.id) === uniqueId);
       if (isActive) {
-        return { ...prev, activeJokers: prev.activeJokers.filter(j => j.id !== joker.id) };
+        return { ...prev, activeJokers: prev.activeJokers.filter(j => (j.instanceId || j.id) !== uniqueId) };
       } else {
         if (prev.activeJokers.length >= 2) return prev;
         return { ...prev, activeJokers: [...prev.activeJokers, joker] };
@@ -261,9 +263,9 @@ export function useGameState(difficultyKey = 'normal') {
     });
   }, []);
 
-  const useTarot = useCallback((tarotId, selectedCardsIds) => {
+  const useTarot = useCallback((uniqueTarotId, selectedCardsIds) => {
     setState(prev => {
-      const tarot = prev.inventory.tarots.find(t => t.id === tarotId);
+      const tarot = prev.inventory.tarots.find(t => (t.instanceId || t.id) === uniqueTarotId);
       if (!tarot) return prev;
 
       let updatedHand = [...prev.hand];
@@ -301,7 +303,7 @@ export function useGameState(difficultyKey = 'normal') {
         }
       }
 
-      const updatedTarots = prev.inventory.tarots.filter(t => t.id !== tarotId);
+      const updatedTarots = prev.inventory.tarots.filter(t => (t.instanceId || t.id) !== uniqueTarotId);
       return {
         ...prev,
         hand: updatedHand,
