@@ -12,6 +12,7 @@ import { DIFFICULTIES } from './data/difficulties';
 import { audio } from './utils/audioManager';
 import { evaluateHand } from './utils/hand/handIdentificator';
 import { calculateScore } from './utils/score/scoreCalculator';
+import { EDITIONS } from './data/deck';
 import './styles/global.css';
 
 const MAX_SELECTION = 5;
@@ -70,12 +71,19 @@ function App() {
   const projectedHand = hand.filter(c => selectedIds.includes(c.id));
   let projectedScore = 0;
   let projectedHandType = '';
+  let projectedChips = 0;
+  let projectedMult = 0;
+  let projectedEditions = [];
+  
   if (projectedHand.length > 0 && !showChangeMenu) {
     const handType = evaluateHand(projectedHand);
     let { chips, mult } = calculateScore(handType, projectedHand, activeJokers);
+    
     if (tempChipsBonus) {
       chips += tempChipsBonus;
     }
+    projectedChips = chips;
+    projectedMult = mult;
     projectedScore = Math.round(chips * mult);
     projectedHandType = handType;
   }
@@ -187,7 +195,7 @@ function App() {
 
       <main className="game-main">
         {phase === 'BLIND_INTRO' ? (
-          <div className="blind-intro" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '2rem' }}>
+          <div className="blind-intro" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '2rem', paddingTop: '4rem' }}>
             <h2 style={{ fontSize: '2.5rem', color: '#ffd700', margin: 0 }}>{BLIND_NAMES[blindIndex]}</h2>
             <p style={{ fontSize: '1.5rem', margin: 0 }}>Ronda {subRound}/5</p>
             <div style={{ background: 'rgba(255,255,255,0.1)', padding: '2rem', borderRadius: '12px', textAlign: 'center' }}>
@@ -213,11 +221,15 @@ function App() {
               round={`${BLIND_NAMES[blindIndex]} - Ronda ${subRound}/5`}
               score={score}
               target={target}
+              chips={projectedChips}
+              mult={projectedMult}
             />
 
             {projectedHand.length > 0 && !showChangeMenu && (
               <div className="projected-score" style={{ textAlign: 'center', margin: '1rem', padding: '1rem', background: 'rgba(76, 175, 80, 0.1)', border: '1px solid #4caf50', borderRadius: '8px', color: '#4caf50' }}>
-                <div style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>Proyección: <strong>{projectedHandType}</strong></div>
+                <div style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>
+                  Proyección: <strong>{projectedHandType}</strong>
+                </div>
                 <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{projectedScore} pts</div>
               </div>
             )}

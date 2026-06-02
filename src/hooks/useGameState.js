@@ -9,7 +9,10 @@ import { generateRiggedHand } from '../utils/hand/handProbabilityManager';
 const HAND_SIZE = 8;
 
 function targetForRound(blindIndex, subRound, diff) {
-  const absoluteRound = blindIndex * 5 + subRound;
+  let absoluteRound = blindIndex * 5 + subRound;
+  if (absoluteRound > 10) {
+    absoluteRound = 10 + ((absoluteRound - 10) * 0.5);
+  }
   return Math.round(diff.baseTarget * Math.pow(diff.growth, absoluteRound - 1));
 }
 
@@ -22,7 +25,7 @@ export function useGameState(difficultyKey = 'normal') {
   const diff = DIFFICULTIES[difficultyKey] || DIFFICULTIES.normal;
 
   const init = useCallback(() => {
-    const shuffled = shuffle(buildDeck());
+    const shuffled = shuffle(buildDeck(0));
     const { hand, remaining } = generateRiggedHand(shuffled, HAND_SIZE);
     return {
       blindIndex: 0,
@@ -47,15 +50,15 @@ export function useGameState(difficultyKey = 'normal') {
 
   const nextBlind = useCallback(() => {
     setState(prev => {
-      if (prev.blindIndex >= 2 && prev.subRound >= 5) return prev; 
-      
+      if (prev.blindIndex >= 2 && prev.subRound >= 5) return prev;
+
       const isNextBlind = prev.subRound >= 5;
       const newBlindIndex = isNextBlind ? prev.blindIndex + 1 : prev.blindIndex;
       const newSubRound = isNextBlind ? 1 : prev.subRound + 1;
-      
-      const fresh = shuffle(buildDeck());
+
+      const fresh = shuffle(buildDeck(newBlindIndex));
       const { hand, remaining } = generateRiggedHand(fresh, HAND_SIZE);
-      
+
       return {
         ...prev,
         blindIndex: newBlindIndex,
@@ -111,7 +114,7 @@ export function useGameState(difficultyKey = 'normal') {
 
       const needed = Math.min(selectedIds.length, prev.deck.length);
       const { hand: drawn, remaining: newDeck } = drawCards(prev.deck, needed);
-      
+
       let drawnIndex = 0;
       const newHand = prev.hand.map(c => {
         if (selectedIds.includes(c.id)) {
@@ -139,7 +142,7 @@ export function useGameState(difficultyKey = 'normal') {
         lastPlayResult: { won, moneyEarned, score: newScore, target: prev.target },
         tempChipsBonus: 0,
       };
-      
+
       if (updated.phase === 'PLAYING') {
         updated.phase = evaluatePhase(updated);
       }
@@ -176,7 +179,7 @@ export function useGameState(difficultyKey = 'normal') {
       if (prev.changesLeft <= 0 || handCardIds.length === 0) return prev;
       const needed = handCardIds.length;
       const { hand: drawn, remaining } = drawCards(prev.deck, needed);
-      
+
       let drawnIndex = 0;
       const newHand = prev.hand.map(c => {
         if (handCardIds.includes(c.id)) {
@@ -202,9 +205,9 @@ export function useGameState(difficultyKey = 'normal') {
   const skipRound = useCallback(() => {
     setState(prev => {
       if (prev.consecutiveSkips >= 2) return prev;
-      return { 
-        ...prev, 
-        consecutiveSkips: prev.consecutiveSkips + 1, 
+      return {
+        ...prev,
+        consecutiveSkips: prev.consecutiveSkips + 1,
         phase: 'ROUND_RESULT',
         lastPlayResult: { won: false, skipped: true, consecutiveSkips: prev.consecutiveSkips + 1, moneyEarned: 0, score: 0, target: prev.target }
       };
@@ -311,14 +314,14 @@ export function useGameState(difficultyKey = 'normal') {
 
   const resetGame = useCallback(() => setState(init()), [init]);
 
-  return { 
-    ...state, 
-    nextBlind, 
-    playHand, 
-    resetGame, 
-    loseLife, 
+  return {
+    ...state,
+    nextBlind,
+    playHand,
+    resetGame,
+    loseLife,
     skipRound,
-    skipBlind, 
+    skipBlind,
     continueToShop,
     buyItem,
     replaceFullHand,

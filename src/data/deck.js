@@ -25,19 +25,22 @@ export const RANKS = [
 
 export const EDITIONS = {
   foil: { name: 'Foil', chipsBonus: 50, multBonus: 0, multFactor: 1, glow: '#4a90e2' },
-  holographic: { name: 'Holo', chipsBonus: 0, multBonus: 10, multFactor: 1, glow: '#a855f7' },
+  holographic: { name: 'Holo', chipsBonus: 0, multBonus: 8, multFactor: 1, glow: '#a855f7' },
   polychrome: { name: 'Polychrome', chipsBonus: 0, multBonus: 0, multFactor: 1.5, glow: '#ff5c5c' },
 };
 
-export function applyRandomEdition(card, chance = 0.08) {
+export function applyRandomEdition(card, chance = 0.08, blindIndex = 0) {
   if (Math.random() > chance) return card;
-  const keys = Object.keys(EDITIONS);
+  let keys = Object.keys(EDITIONS);
+  if (blindIndex === 0) {
+    keys = keys.filter(k => k !== 'holographic');
+  }
   const edition = keys[Math.floor(Math.random() * keys.length)];
   return { ...card, edition };
 }
 
 // Genera las 52 cartas
-export function buildDeck() {
+export function buildDeck(blindIndex = 0) {
   const deck = [];
   SUITS.forEach(suit => {
     RANKS.forEach(rank => {
@@ -46,7 +49,7 @@ export function buildDeck() {
         rank,
         suit,
       };
-      deck.push(applyRandomEdition(card, 0.08));
+      deck.push(applyRandomEdition(card, 0.08, blindIndex));
     });
   });
   return deck;
